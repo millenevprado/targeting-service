@@ -2,10 +2,22 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 FROM python:3.11-slim AS production
+
+# hadolint ignore=DL3005,DL3008
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN groupadd -r appgroup && useradd -r -g appgroup -m appuser
 
