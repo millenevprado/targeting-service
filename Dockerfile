@@ -16,8 +16,20 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# hadolint ignore=DL3013
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+# Runtime deps are already installed (see builder's --user install below),
+# so pip/setuptools/wheel and ensurepip's bundled wheels are never used here.
+# Strip them instead of upgrading: their vendored copies (pip vendors its own
+# msgpack; ensurepip bundles a setuptools wheel) carry CVEs that upgrading
+# pip alone doesn't clear.
+RUN python -m pip uninstall -y pip setuptools wheel 2>/dev/null; \
+    rm -rf /usr/local/lib/python3.*/ensurepip \
+           /usr/local/lib/python3.*/site-packages/pip* \
+           /usr/local/lib/python3.*/site-packages/setuptools* \
+           /usr/local/lib/python3.*/site-packages/wheel* \
+           /usr/local/lib/python3.*/site-packages/_distutils_hack \
+           /usr/local/lib/python3.*/site-packages/pkg_resources \
+           /usr/local/bin/pip* \
+           /usr/local/bin/wheel*
 
 RUN groupadd -r appgroup && useradd -r -g appgroup -m appuser
 
